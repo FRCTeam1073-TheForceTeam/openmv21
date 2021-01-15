@@ -115,13 +115,21 @@ while(True):
     # Do Image processing stuff...
 
     # Read the lidar since it has had time for characters to come over the serial port.
-    lidar_frame = uart.readline(); # Read until the newline character (we picked text format with newline above)
+    lidar_frame = uart.read(9); # Read until the newline character (we picked text format with newline above)
+
+    distance = lidar_frame[2] + (lidar_frame[3]<<8);
+    strength = float(lidar_frame[4] + (lidar_frame[5]<<8))/655.360;
+    #temperature = lidar_frame[6] + (lidar_frame[7]<<8);
 
     # Send out our results.
-    print("Frame: %s"%lidar_frame); # Print the line we got back for this frame.
+    print("Frame: %d   %.2f"%(#lidar_frame,
+    distance, strength)); # Print the line we got back for this frame.
 
     # Delay to control the rate...
-    pyb.delay(30); # Wait a while...
-
-
-
+    pyb.delay(250); # Wait a while...
+    uart.write(command);
+    lidar_frame = uart.read(9);
+    final = lidar_frame[2] + (lidar_frame[3]<<8);
+    displaced = -(final - distance);
+    velocity = 4.0 * float(displaced) / 100.0;
+    print("Velocity: %.2f"% velocity);
