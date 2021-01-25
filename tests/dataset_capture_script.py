@@ -12,6 +12,13 @@ sensor.set_pixformat(sensor.RGB565) # Modify as you like.
 sensor.set_framesize(sensor.QVGA) # Modify as you like.
 sensor.skip_frames(time = 2000)
 
+sensor.set_auto_gain(False)
+sensor.set_auto_whitebal(False)
+sensor.set_auto_exposure(True)
+
+original_exposure = sensor.get_exposure_us()
+sensor.set_auto_exposure(False, int(.05 * original_exposure))
+
 clock = time.clock()
 
 uart = UART(1, 115200)
@@ -23,18 +30,14 @@ color[2] = 0x00
 
 while(True):
     clock.tick()
+
+
     img = sensor.snapshot()
-    # Apply lens correction if you need it.
-    # img.lens_corr()
-    # Apply rotation correction if you need it.
-    # img.rotation_corr()
-    # Apply other filters...
-    # E.g. mean/median/mode/midpoint/etc.
+
+
+
     print(clock.fps())
 
-
-    # Uncomment the next lines to add the light
-    #uart.write(color);
-    #print("!")
-    #color[2] = color[2]
-    #time.sleep(0.5);
+    uart.write(color)
+    print("!")
+    time.sleep(0.1);
