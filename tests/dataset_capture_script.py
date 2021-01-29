@@ -4,9 +4,11 @@
 # You should apply the same image pre-processing steps you expect to run on images
 # that you will feed to your model during run-time.
 
-import sensor, image, time
+import sensor, image, time, pyb
 import frc_pixie
 from pyb import UART
+
+record_time = 10000 # 10 seconds in milliseconds
 
 pixie = frc_pixie.frc_pixie()
 
@@ -31,13 +33,20 @@ color[0] = 0x00
 color[1] = 0xFF
 color[2] = 0x00
 
-while(True):
+img_writer = image.ImageWriter("/stream.bin")
+
+start = pyb.millis()
+while pyb.elapsed_millis(start) < record_time:
     clock.tick()
 
     img = sensor.snapshot()
 
     print(clock.fps())
+    img_writer.add_frame(img)
 
     pixie.setColor(color)
     print("!")
     time.sleep(0.1);
+
+img_writer.close()
+print("Done")
