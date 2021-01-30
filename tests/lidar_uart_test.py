@@ -28,7 +28,13 @@ while(True):
     lidar_frame = lidar.readLidar()
 
     # Send out our results.
-    print("Frame: %s"%lidar_frame); # Print the line we got back for this frame.
+    print("Frame: %d   %.2f"%(#lidar_frame,
+    distance, strength)); # Print the line we got back for this frame.
 
     # Delay to control the rate...
+    pyb.delay(250); # Wait a while...
+    final = lidar_frame[2] + (lidar_frame[3]<<8);
+    displaced = -(final - distance);
+    velocity = 4.0 * float(displaced) / 100.0;
+    print("Velocity: %.2f"% velocity);
     pyb.delay(30); # Wait a while...
