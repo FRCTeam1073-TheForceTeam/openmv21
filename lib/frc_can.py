@@ -233,3 +233,11 @@ class frc_can:
     def clear_advanced_track_data(self):
         atb = bytearray(8)
         self.send(self.api_id(5, 1), atb)
+
+    #send LiDar range sensing data to the RIO using API class 6
+    def send_range_data(self):
+        atb = bytearray(3)
+        atb[0] = (range & 0xff00) >> 8
+        atb[1] = (range & 0x00ff)
+        atb[2] = (qual & 0xff)
+        self.send(seld.api_id(6, 1), atb)
