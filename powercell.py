@@ -24,8 +24,11 @@ original_exposure = sensor.get_exposure_us()
 sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
+
+# Histogram baseline for yellow power-cell
 hist = [45, 99, -30, 10, 35, 70]
 
+# Power-Cell tracker is device #2
 can = frc_can.frc_can(2)
 
 # Set the configuration for our OpenMV frcCAN device.
@@ -50,7 +53,7 @@ while(True):
                                     r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
             #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
             img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
-            print(circle)
+            #print(circle)
 
             #filtering for the closest powercell to the collector, compares and keeps closest PC
             if bestCircle == None:
@@ -74,7 +77,7 @@ while(True):
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
-        can.send_camera_status(320, 240)
+        can.send_camera_status(sensor.width(), sensor.height())
 
     pyb.delay(70)
     print("HB %d" % can.get_frame_counter())
