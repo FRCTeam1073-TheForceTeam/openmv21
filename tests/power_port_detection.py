@@ -100,7 +100,7 @@ while(True):
     for g in greenBlobs:
         for w in whiteBlobs:
             if (w.w() * 3) * 1.3 > g.w() and (w.w() * 3) * 0.7 < g.w() and g.x() < w.x() and g.x() + g.w() > w.x() + w.w() and int(w.y()) < int(g.y()) and int(w.y() + w.h()) > g.y():
-                targetBlob.append(w)
+                targetBlob = w
                 targetX.append(w.cx())
                 targetY.append(w.cy())
 
