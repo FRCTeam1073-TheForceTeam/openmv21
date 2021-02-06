@@ -1,4 +1,4 @@
-# Power Port Detection - By: cwallis
+# Dataset Capture Script - By: cwallis - Wed Jan 13 2021
 
 # Use this script to control how your OpenMV Cam captures images for your dataset.
 # You should apply the same image pre-processing steps you expect to run on images
@@ -11,8 +11,6 @@
 import sensor, image, time, math
 import frc_pixie
 from pyb import UART
-
-live = True
 
 pixie = frc_pixie.frc_pixie()
 
@@ -37,8 +35,7 @@ color[0] = 0x00
 color[1] = 0xFF
 color[2] = 0x00
 
-if live == False:
-    img_reader = image.ImageReader("/stream_jan30.bin")
+img_reader = image.ImageReader("/stream_jan30.bin")
 
 while(True):
     clock.tick()
@@ -48,12 +45,10 @@ while(True):
     whiteBlobs = []
     targetX = []
     targetY = []
-    if live == False:
-        img = img_reader.next_frame(copy_to_fb=True, loop=True, pause=True)
-    else:
-        img = sensor.snapshot()
 
-    thresholds = [(98, 100, -7, 8, -8, 0)]
+    img = img_reader.next_frame(copy_to_fb=True, loop=True, pause=True)
+
+    thresholds = [(88, 100, -26, 14, -20, 32)]
 
     for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
         # These values depend on the blob not being circular - otherwise they will be shaky.
@@ -70,7 +65,7 @@ while(True):
         ## Note - the blob rotation is unique to 0-180 only.
         #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
-    thresholds = [(76, 100, -16, -1, 4, 28)]
+    thresholds = [(71, 88, -19, 13, -4, 23)]
     blobs = []
 
     for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
@@ -83,14 +78,14 @@ while(True):
             #img.draw_edges(blob.min_corners(), color=(255,0,0))
             #img.draw_line(blob.major_axis_line(), color=(0,255,0))
             #img.draw_line(blob.minor_axis_line(), color=(0,0,255))
-        #img.draw_rectangle(blob.rect(), color=(255, 0, 0))
+        #img.draw_rectangle(blob.rect())
         #img.draw_cross(blob.cx(), blob.cy())
         ## Note - the blob rotation is unique to 0-180 only.
         #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
     for g in greenBlobs:
         for w in whiteBlobs:
-            if (w.w() * 3) * 1.2 > g.w() and (w.w() * 3) * 0.8 < g.w() and int(g.cx()) > int(w.cx() - 5) and int(g.cx()) < int(w.cx() + 5) and int(w.y()) < int(g.y()) and int(w.y() + w.h()) > g.y():
+            if int(g.cx()) > int(w.cx() - 5) and int(g.cx()) < int(w.cx() + 5) and int(w.y()) < int(g.y()) and int(w.y() + w.h()) > g.y():
                 targetX.append(w.cx())
                 targetY.append(w.cy())
 
@@ -102,5 +97,4 @@ while(True):
 
     pixie.setColor(color)
     print("!")
-    if live == False:
-        time.sleep(0.7)
+    time.sleep(0.7);
