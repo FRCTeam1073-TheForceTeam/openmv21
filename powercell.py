@@ -6,27 +6,28 @@
 # Note that the find_circles() method will only find circles which are completely
 # inside of the image. Circles which go outside of the image/roi are ignored...
 
-import sensor, image, time
+import sensor, image, time, pyb
+import frc_can
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # grayscale is faster
 sensor.set_framesize(sensor.QQVGA)
 sensor.skip_frames(time = 2000)
 clock = time.clock()
-hist = [45, 99, -40, -18, 25, 50]
+hist = [45, 99, -25, 10, 30, 60]
+
+can = frc_can.frc_can(2)
+
+# Set the configuration for our OpenMV frcCAN device.
+can.set_config(2, 0, 0, 0)
+# Set the mode for our OpenMV frcCAN device.
+can.set_mode(1)
 
 while(True):
+    can.update_frame_counter() # Update the frame counter.
     img = sensor.snapshot().lens_corr(1.8)
 
-    # Circle objects have four values: x, y, r (radius), and magnitude. The
-    # magnitude is the strength of the detection of the circle. Higher is
-    # better...
-
-    # `threshold` controls how many circles are found. Increase its value
-    # to decrease the number of circles detected...
-
-    # `x_margin`, `y_margin`, and `r_margin` control the merging of similar
-    # circles in the x, y, and r (radius) directions.
+    bestCircle = None
 
     for blob in img.find_blobs([hist], pixels_threshold=500, area_threshold=500, merge=True, ):
         print (blob)
@@ -34,20 +35,34 @@ while(True):
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
         minr = int((blob.w()-5)/2)
         maxr = int((blob.w()+5)/2)
+
         for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-                r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
-                #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
-                img.draw_circle(circle.x(), circle.y(), circle.r(), color = (255, 0, 0))
-                print(circle)
+                                    r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
+            #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
+            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (255, 0, 0))
+            print(circle)
 
-#circlecount = circlecount + 1
-#print (circlecount)
-#if circlecount < 20:
-#if (blob.pixels() + circle.magnitude())/2 > blob.pixels() + 50:
-#attempting to average them and keep within a range, may have to make into a % error situation
-    #img.draw_circle(circle.x(), circle.y(), circle.r(), color = (255, 0, 0))
-    #print(circle)
+            #filtering for the closest powercell to the collector, compares and keeps closest PC
+            if bestCircle == None:
+                bestCircle = circle
+            elif bestCircle.y() > circle.y():
+                bestCircle = circle
 
-    # r_min, r_max, and r_step control what radiuses of circles are tested.
-    # Shrinking the number of tested circle radiuses yields a big performance boost.
+    can.send_heartbeat()       # Send the heartbeat message to the RoboRio
+
+    if bestCircle == None:
+        can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
+    else:
+        area = int(3.14159 * (bestCircle.r() * bestCircle.r()))
+        can.send_advanced_track_data(bestCircle.x(), bestCircle.y(), area, 0, 11, 0)
+                #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
+
+    if can.get_frame_counter() % 50 == 0:
+        can.send_config_data()
+        can.send_camera_status(320, 240)
+
+    pyb.delay(100)
+    print("HB %d" % can.get_frame_counter())
+    can.check_mode();
+
 
