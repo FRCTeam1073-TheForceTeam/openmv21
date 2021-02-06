@@ -33,7 +33,7 @@ color[0] = 0x00
 color[1] = 0xFF
 color[2] = 0x00
 
-img_writer = image.ImageWriter("/stream.bin")
+img_writer = image.ImageIO("/test_stream.bin", "w")
 
 start = pyb.millis()
 while pyb.elapsed_millis(start) < record_time:
@@ -42,9 +42,9 @@ while pyb.elapsed_millis(start) < record_time:
     img = sensor.snapshot()
 
     print(clock.fps())
-    img_writer.add_frame(img)
+    img_writer.write(img)
 
-    pixie.setColor(color)
+    #pixie.setColor(color)
     print("!")
     time.sleep(0.1);
 
