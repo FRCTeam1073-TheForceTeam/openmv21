@@ -11,10 +11,20 @@ import frc_can
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # grayscale is faster
-sensor.set_framesize(sensor.QQVGA)
-sensor.skip_frames(time = 2000)
+sensor.set_framesize(sensor.QVGA)
+sensor.skip_frames(time = 2500)
+sensor.set_auto_exposure(False)
+sensor.set_auto_gain(False)
+sensor.set_auto_whitebal(False)
+
+pyb.LED(1).off()
+pyb.LED(3).off()
+
+original_exposure = sensor.get_exposure_us()
+sensor.set_auto_exposure(False, int(.30 * original_exposure))
+
 clock = time.clock()
-hist = [45, 99, -25, 10, 30, 60]
+hist = [45, 99, -30, 10, 35, 70]
 
 can = frc_can.frc_can(2)
 
@@ -25,7 +35,7 @@ can.set_mode(1)
 
 while(True):
     can.update_frame_counter() # Update the frame counter.
-    img = sensor.snapshot().lens_corr(1.8)
+    img = sensor.snapshot()
 
     bestCircle = None
 
@@ -39,29 +49,34 @@ while(True):
         for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
                                     r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
             #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
-            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (255, 0, 0))
+            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
             print(circle)
 
             #filtering for the closest powercell to the collector, compares and keeps closest PC
             if bestCircle == None:
                 bestCircle = circle
-            elif bestCircle.y() > circle.y():
+            elif bestCircle.y() < circle.y():
                 bestCircle = circle
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
 
     if bestCircle == None:
         can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
+        pyb.LED(1).off()
+        pyb.LED(3).on()
     else:
         area = int(3.14159 * (bestCircle.r() * bestCircle.r()))
         can.send_advanced_track_data(bestCircle.x(), bestCircle.y(), area, 0, 11, 0)
+        img.draw_circle(bestCircle.x(), bestCircle.y(), bestCircle.r(), color = (255, 0, 0))
+        pyb.LED(1).on()
+        pyb.LED(3).off()
                 #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
         can.send_camera_status(320, 240)
 
-    pyb.delay(100)
+    pyb.delay(70)
     print("HB %d" % can.get_frame_counter())
     can.check_mode();
 
