@@ -118,7 +118,7 @@ while(True):
     can.send_heartbeat()
 
 
-    if targetX.len() == 0 or targetY.len() == 0:
+    if len(targetX) == 0 or len(targetX) == 0:
         can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
     else:
         area = int(3.14159 * (targetBlob.w() / 2 * targetBlob.w() / 2))
