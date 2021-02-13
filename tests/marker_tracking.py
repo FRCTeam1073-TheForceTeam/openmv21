@@ -4,16 +4,16 @@
 
 import sensor, image, time, math
 
-img_src = "stream"
+img_src = "cam"
 
 # Color Tracking Thresholds (L Min, L Max, A Min, A Max, B Min, B Max)
 # The below thresholds track in general red/green things. You may wish to tune them...
-thresholds = [(8, 31, 13, 44, 11, 127)] # generic_blue_thresholds
+thresholds = [(36, 77, 48, 79, 36, 81)]
 # You may pass up to 16 thresholds above. However, it's not really possible to segment any
 # scene with 16 thresholds before color thresholds start to overlap heavily.
 
 if (img_src == "stream"):
-    img_reader = image.ImageReader("/stream_marker_feb2b.bin")
+    img_reader = image.ImageIO("/stream_marker_feb2b.bin","r")
 else:
     sensor.reset()
     sensor.set_pixformat(sensor.RGB565)
@@ -31,35 +31,42 @@ clock = time.clock()
 blobs = []
 
 while(True):
+    blobs = []
+    targets = []
+
     clock.tick()
     if (img_src == "stream"):
-        img = img_reader.next_frame(copy_to_fb=True, loop=True, pause=False)
+        img = img_reader.read(copy_to_fb=True, loop=True, pause=False)
     else:
         img = sensor.snapshot()
 
     for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
-        if (blob.h() / blob.w()) > (10/4) and (blob.h() / blob.w()) < (12/4):
-            blobs.append(blob);
+        blobs.append(blob)
+        if (blob.h() / blob.w()) > (7/3.5) * 0.9 and (blob.h() / blob.w()) < (7/3.5) * 1.1:
+            targets.append(blob);
 
-    targets = []
+    length = 0
+    area = 0
+    area_len = 0
 
-    for b in blobs:
-        print("Blob Elongation: ",blob.elongation()," Blob Rotation: ",blob.rotation_deg())
-        # These values depend on the blob not being circular - otherwise they will be shaky.
-        if blob.elongation() > 0.75:
-            #img.draw_edges(blob.min_corners(), color=(255,0,0))
-            blob_maj_axis = blob.major_axis_line()
-            img.draw_line(blob_maj_axis, color=(0,255,0))
-            #img.draw_line(blob.minor_axis_line(), color=(0,0,255))
+    target = "ugh"
 
-            if ((blob.rotation_deg()>75) and (blob.rotation_deg()<105)):
-                print ("Target Detected")
-                targets.append([blob.cx(), blob.cy()])
-                img.draw_cross(blob.cx(), blob.cy())
+    for t in targets:
+        if t.w() * t.h() > area:
+            area = t.w() * t.h();
+            target = t
+
+    if target != "ugh":
+        if target.elongation() > 0.5:
+            img.draw_edges(target.min_corners(), color=(255,0,0))
+            img.draw_line(target.major_axis_line(), color=(0,255,0))
+            img.draw_line(target.minor_axis_line(), color=(0,0,255))
         # These values are stable all the time.
-        #img.draw_rectangle(blob.rect())
+        img.draw_rectangle(target.rect())
+        img.draw_cross(target.cx(), target.cy())
         # Note - the blob rotation is unique to 0-180 only.
-        #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
-    print("Targets: ",targets)
-    time.sleep(0.5);
+        img.draw_keypoints([(target.cx(), target.cy(), int(math.degrees(target.rotation())))], size=20)
+
+    #print("Targets: ",targets)
+    time.sleep(0.1);
     #print(clock.fps())
