@@ -118,16 +118,21 @@ while(True):
     can.send_heartbeat()
 
 
-    if len(targetX) == 0 or len(targetX) == 0:
+    if len(targetX) == 0 or len(targetY) == 0:
         can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
+        #pyb.LED(1).off()
+        #pyb.LED(3).on()
     else:
         area = int(3.14159 * (targetBlob.w() / 2 * targetBlob.w() / 2))
         can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
+        #pyb.LED(1).on()
+        #pyb.LED(3).off()
             #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
-        can.send_camera_status(320, 240)
+        can.send_camera_status(sensor.width(), sensor.height())
 
+    pyb.delay(70)
     print("HB %d" % can.get_frame_counter())
     can.check_mode();
