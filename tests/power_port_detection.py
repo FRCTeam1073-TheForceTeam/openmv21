@@ -133,13 +133,13 @@ while(True):
 
     if len(targetX) == 0 or len(targetY) == 0:
         can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
-        #pyb.LED(1).off()
-        #pyb.LED(3).on()
+        pyb.LED(1).off()
+        pyb.LED(3).on()
     else:
         area = int(3.14159 * (targetBlob.w() / 2 * targetBlob.w() / 2))
         can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
-        #pyb.LED(1).on()
-        #pyb.LED(3).off()
+        pyb.LED(1).on()
+        pyb.LED(3).off()
             #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
