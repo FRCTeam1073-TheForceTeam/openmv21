@@ -57,7 +57,7 @@ while(True):
     targetX = []
     targetY = []
     if live == False:
-        img = img_reader.next_frame(copy_to_fb=True, loop=True, pause=True)
+        img = img_reader.read(copy_to_fb=True, loop=True, pause=True)
     else:
         img = sensor.snapshot()
 
