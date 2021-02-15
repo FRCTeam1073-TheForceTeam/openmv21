@@ -8,7 +8,7 @@
 # I am going to pretend it's a safety thing even though it's just because
 # it hates me less this way - Celia
 
-import sensor, image, time, math
+import sensor, image, time, math, pyb
 import frc_pixie
 import frc_can
 from pyb import UART
@@ -45,7 +45,7 @@ color[1] = 0xFF
 color[2] = 0x00
 
 if live == False:
-    img_reader = image.ImageReader("/stream_jan30.bin")
+    img_reader = image.ImageIO("/stream_jan30.bin", "r")
 
 while(True):
     can.update_frame_counter() # Update the frame counter.
@@ -95,14 +95,27 @@ while(True):
         #img.draw_cross(blob.cx(), blob.cy())
         ## Note - the blob rotation is unique to 0-180 only.
         #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
+    targetGreenBlobs = [];
+    targetWhiteBlobs = [];
     targetBlob = None
 
     for g in greenBlobs:
         for w in whiteBlobs:
             if (w.w() * 3) * 1.3 > g.w() and (w.w() * 3) * 0.7 < g.w() and g.x() < w.x() and g.x() + g.w() > w.x() + w.w() and int(w.y()) < int(g.y()) and int(w.y() + w.h()) > g.y():
-                targetBlob = w
-                targetX.append(w.cx())
-                targetY.append(w.cy())
+                targetGreenBlobs.append(g);
+                targetWhiteBlobs.append(w);
+
+    targetArea = 0
+    index = 0
+
+    for t in targetGreenBlobs:
+        if t.w() * t.h() > targetArea:
+            targetArea = t.w() * t.h()
+            targetBlob = targetWhiteBlobs[index]
+        index = index + 1
+
+        targetX.append(w.cx())
+        targetY.append(w.cy())
 
     for x in targetX:
         img.draw_line(x, 0, x, img.height())
@@ -111,9 +124,9 @@ while(True):
         img.draw_line(0, y, img.width(), y)
 
     pixie.setColor(color)
-    print("!")
+
     if live == False:
-        time.sleep(0.7)
+        time.sleep(1.5)
 
     can.send_heartbeat()
 
