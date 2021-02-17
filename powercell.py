@@ -25,7 +25,8 @@ original_exposure = sensor.get_exposure_us()
 sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
-hist = [45, 99, -30, 10, 35, 70]
+hist = [45, 99, -30, 0, 35, 70]
+testHist = [15, 99, -25, 15, 20, 65]
 
 can = frc_can.frc_can(2)
 
@@ -71,18 +72,17 @@ lidar_command(command, "Enable");
 
 while(True):
     can.update_frame_counter() # Update the frame counter.
-    img = sensor.snapshot()
+    #img = sensor.snapshot()
+    img = sensor.snapshot().lens_corr(strength=1.8)
 
     bestCircle = None
 
     #lidar
     command = bytes(b'\x5A\x04\x04\x62');
     uart.write(command);
-    lidar_frame = uart.readline();
-    print("Frame: %s"%lidar_frame);
 
     #pc tracking
-    for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=500, area_threshold=500, merge=True, ):
+    for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=350, area_threshold=200, merge=True, ):
         print (blob)
         #img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h())
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
@@ -120,9 +120,11 @@ while(True):
         can.send_camera_status(320, 240)
 
     #PARSE THE RANGE DATA AND THEN SEE IT
+    lidar_frame = uart.readline();
+    print("Frame: %s"%lidar_frame);
     can.send_range_data(2, 3)
 
-    pyb.delay(70)
+    pyb.delay(10)
     print("HB %d" % can.get_frame_counter())
     can.check_mode();
 
