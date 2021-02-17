@@ -35,7 +35,8 @@ class frc_can:
         # Initialize CAN based on which type of board we're on
         if omv.board_type() == "H7":
             print("H7 CAN Interface")
-            self.can.init(CAN.NORMAL, extframe=True, baudrate=1000000, sampling_point=75) # 1000Kbps H7
+            #self.can.init(CAN.NORMAL, extframe=True, baudrate=1000000, sampling_point=75) # 1000Kbps H7
+            self.can.init(CAN.NORMAL, extframe=True, prescaler=4,  sjw=1, bs1=8, bs2=3)
         elif omv.board_type() == "M7":
             self.can.init(CAN.NORMAL, extframe=True, prescaler=3,  sjw=1, bs1=10, bs2=7) # 1000Kbps on M7
             self.can.setfilter(0, CAN.LIST32, 0, [self.my_arb_id(self.api_id(1,3)), self.my_arb_id(self.api_id(1,4))])
@@ -235,9 +236,10 @@ class frc_can:
         self.send(self.api_id(5, 1), atb)
 
     #send LiDar range sensing data to the RIO using API class 6
-    def send_range_data(self):
+    #r stands for range
+    def send_range_data(self, r, qual):
         atb = bytearray(3)
-        atb[0] = (range & 0xff00) >> 8
-        atb[1] = (range & 0x00ff)
+        atb[0] = (r & 0xff00) >> 8
+        atb[1] = (r & 0x00ff)
         atb[2] = (qual & 0xff)
-        self.send(seld.api_id(6, 1), atb)
+        self.send(self.api_id(6, 1), atb)

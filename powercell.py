@@ -8,6 +8,7 @@
 
 import sensor, image, time, pyb
 import frc_can
+from pyb import UART
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # grayscale is faster
@@ -33,13 +34,55 @@ can.set_config(2, 0, 0, 0)
 # Set the mode for our OpenMV frcCAN device.
 can.set_mode(1)
 
+pc_roi = (0, 0, 320, 155)
+mag_roi = (0, 155, 320, 90)
+
+
+#lidar initialization
+uart = UART(3)
+uart.init(115200, bits=8, parity=None, stop=1, timeout_char=20, timeout=80);
+
+#lidar setup
+def lidar_command(command, purpose):
+    if purpose:
+        print("%s Command : %s"%(purpose, command))
+    uart.write(command);
+    response = uart.read();
+    if purpose:
+        print("%s Response : %s"%(purpose, response))
+    return purpose
+
+command = bytes(b'\x5A\x05\x07\x00\x66');
+lidar_command(command, "Disable");
+
+#read lidar
+response = uart.read();
+
+command = bytes(b'\x5A\x04\x01\x5F');
+lidar_command(command, "Version");
+command = bytes(b'\x5A\x05\x05\x02\x66');
+lidar_command(command, "Format");
+command = bytes(b'\x5A\x06\x03\x00\x00\x63');
+lidar_command(command, "Rate");
+command = bytes(b'\x5A\x05\x07\x01\x67');
+lidar_command(command, "Enable");
+
+
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     img = sensor.snapshot()
 
     bestCircle = None
 
-    for blob in img.find_blobs([hist], pixels_threshold=500, area_threshold=500, merge=True, ):
+    #lidar
+    command = bytes(b'\x5A\x04\x04\x62');
+    uart.write(command);
+    lidar_frame = uart.readline();
+    print("Frame: %s"%lidar_frame);
+
+    #pc tracking
+    for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=500, area_threshold=500, merge=True, ):
         print (blob)
         #img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h())
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
@@ -75,6 +118,9 @@ while(True):
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
         can.send_camera_status(320, 240)
+
+    #PARSE THE RANGE DATA AND THEN SEE IT
+    can.send_range_data(2, 3)
 
     pyb.delay(70)
     print("HB %d" % can.get_frame_counter())
