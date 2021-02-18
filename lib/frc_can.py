@@ -35,8 +35,8 @@ class frc_can:
         # Initialize CAN based on which type of board we're on
         if omv.board_type() == "H7":
             print("H7 CAN Interface")
-            #self.can.init(CAN.NORMAL, extframe=True, baudrate=1000000, sampling_point=75) # 1000Kbps H7
-            self.can.init(CAN.NORMAL, extframe=True, prescaler=4,  sjw=1, bs1=8, bs2=3)
+            self.can.init(CAN.NORMAL, extframe=True, baudrate=1000000, sampling_point=75) # 1000Kbps H7
+            #self.can.init(CAN.NORMAL, extframe=True, prescaler=4,  sjw=1, bs1=8, bs2=3)
         elif omv.board_type() == "M7":
             self.can.init(CAN.NORMAL, extframe=True, prescaler=3,  sjw=1, bs1=10, bs2=7) # 1000Kbps on M7
             self.can.setfilter(0, CAN.LIST32, 0, [self.my_arb_id(self.api_id(1,3)), self.my_arb_id(self.api_id(1,4))])

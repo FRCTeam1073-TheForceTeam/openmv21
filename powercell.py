@@ -22,11 +22,11 @@ pyb.LED(1).off()
 pyb.LED(3).off()
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.30 * original_exposure))
+sensor.set_auto_exposure(False, int(.40 * original_exposure))
 
 clock = time.clock()
-hist = [45, 99, -30, 0, 35, 70]
-testHist = [15, 99, -25, 15, 20, 65]
+hist = [15, 95, -15, 20, 25, 80]
+testHist = [15, 99, -25, 20, 15, 65]
 
 can = frc_can.frc_can(2)
 
@@ -35,7 +35,7 @@ can.set_config(2, 0, 0, 0)
 # Set the mode for our OpenMV frcCAN device.
 can.set_mode(1)
 
-pc_roi = (0, 0, 320, 155)
+pc_roi = (0, 110, 325, 120)
 mag_roi = (0, 155, 320, 90)
 
 
@@ -82,7 +82,7 @@ while(True):
     uart.write(command);
 
     #pc tracking
-    for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=350, area_threshold=200, merge=True, ):
+    for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=75, area_threshold=75, merge=True, ):
         print (blob)
         #img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h())
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
