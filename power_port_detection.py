@@ -140,7 +140,15 @@ while(True):
         can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
         pyb.LED(1).on()
         pyb.LED(3).off()
-            #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
+
+        img.draw_edges(targetBlob.min_corners(), color=(255,0,0))
+        img.draw_line(targetBlob.major_axis_line(), color=(0,255,0))
+        img.draw_line(targetBlob.minor_axis_line(), color=(0,0,255))
+        img.draw_rectangle(targetBlob.rect(), color=(255, 0, 0))
+        img.draw_cross(targetBlob.cx(), targetBlob.cy())
+        # Note - the blob rotation is unique to 0-180 only.
+        img.draw_keypoints([(targetBlob.cx(), targetBlob.cy(), int(math.degrees(targetBlob.rotation())))], size=20)
+        #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
