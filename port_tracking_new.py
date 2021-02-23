@@ -16,7 +16,7 @@ from pyb import UART
 live = True
 
 pixie = frc_pixie.frc_pixie()
-can = frc_can.frc_can(2)
+can = frc_can.frc_can(1)
 
 # Set the configuration for our OpenMV frcCAN device.
 can.set_config(2, 0, 0, 0)
@@ -47,28 +47,27 @@ color[2] = 0x00
 if live == False:
     img_reader = image.ImageIO("/stream_jan30.bin", "r")
 
+roi = (16, 0, 254, 164)
+
+thresholdsG = [(46, 100, -52, -20, -19, 26)]
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     clock.tick()
 
-    blobs = []
     greenBlobs = []
-    whiteBlobs = []
-    targetX = []
-    targetY = []
+
     if live == False:
         img = img_reader.read(copy_to_fb=True, loop=True, pause=True)
     else:
         img = sensor.snapshot()
 
-    thresholds = [(76, 100, -65, -8, -24, 22)]
 
-    for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
+    for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
         # These values depend on the blob not being circular - otherwise they will be shaky.
         # These values are stable all the time.
         greenBlobs.append(blob)
 
-    #for c in greenBlobs:
         #if blob.elongation() > 0.5:
             #img.draw_edges(blob.min_corners(), color=(255,0,0))
             #img.draw_line(blob.major_axis_line(), color=(0,255,0))
@@ -78,44 +77,21 @@ while(True):
         ## Note - the blob rotation is unique to 0-180 only.
         #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
-    thresholds = [(31, 61, -8, 11, 0, 28)]
-    blobs = []
-
-    for blob in img.find_blobs(thresholds, pixels_threshold=150, area_threshold=150):
-        # These values depend on the blob not being circular - otherwise they will be shaky.
-        # These values are stable all the time.
-        whiteBlobs.append(blob)
-
-    #for c in whiteBlobs:
-        #if blob.elongation() > 0.5:
-            #img.draw_edges(blob.min_corners(), color=(255,0,0))
-            #img.draw_line(blob.major_axis_line(), color=(0,255,0))
-            #img.draw_line(blob.minor_axis_line(), color=(0,0,255))
-        #img.draw_rectangle(blob.rect(), color=(255, 0, 0))
-        #img.draw_cross(blob.cx(), blob.cy())
-        ## Note - the blob rotation is unique to 0-180 only.
-        #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
-    targetGreenBlobs = [];
-    targetWhiteBlobs = [];
     targetBlob = None
-
-    for g in greenBlobs:
-        for w in whiteBlobs:
-            if (w.w() * 3) * 1.3 > g.w() and (w.w() * 3) * 0.7 < g.w() and g.x() < w.x() and g.x() + g.w() > w.x() + w.w() and int(w.y()) < int(g.y()) and int(w.y() + w.h()) > g.y():
-                targetGreenBlobs.append(g);
-                targetWhiteBlobs.append(w);
+    targetX = []
+    targetY = []
 
     targetArea = 0
     index = 0
 
-    for t in targetGreenBlobs:
+    for t in greenBlobs:
         if t.w() * t.h() > targetArea:
             targetArea = t.w() * t.h()
-            targetBlob = targetWhiteBlobs[index]
+            targetBlob = t
         index = index + 1
 
-        targetX.append(w.cx())
-        targetY.append(w.cy())
+        targetX.append(t.cx())
+        targetY.append(t.y())
 
     for x in targetX:
         img.draw_line(x, 0, x, img.height())
@@ -140,7 +116,14 @@ while(True):
         can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
         pyb.LED(1).on()
         pyb.LED(3).off()
-            #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
+
+        img.draw_edges(targetBlob.min_corners(), color=(255,0,0))
+        img.draw_line(targetBlob.major_axis_line(), color=(0,255,0))
+        img.draw_line(targetBlob.minor_axis_line(), color=(0,0,255))
+        img.draw_rectangle(targetBlob.rect(), color=(255, 0, 0))
+        img.draw_cross(targetBlob.cx(), targetBlob.cy())
+        # Note - the blob rotation is unique to 0-180 only.
+        #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()

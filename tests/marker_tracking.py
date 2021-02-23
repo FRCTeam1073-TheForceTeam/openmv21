@@ -8,12 +8,12 @@ img_src = "cam"
 
 # Color Tracking Thresholds (L Min, L Max, A Min, A Max, B Min, B Max)
 # The below thresholds track in general red/green things. You may wish to tune them...
-thresholds = [(36, 77, 48, 79, 36, 81)]
+thresholds = [(36, 77, 40, 79, 33, 81)]
 # You may pass up to 16 thresholds above. However, it's not really possible to segment any
 # scene with 16 thresholds before color thresholds start to overlap heavily.
 
 if (img_src == "stream"):
-    img_reader = image.ImageIO("/stream_marker_feb2b.bin","r")
+    img_reader = image.ImageIO("/marker_stream.bin","r")
 else:
     sensor.reset()
     sensor.set_pixformat(sensor.RGB565)
@@ -42,21 +42,21 @@ while(True):
 
     for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
         blobs.append(blob)
-        if (blob.h() / blob.w()) > (7/3.5) * 0.9 and (blob.h() / blob.w()) < (7/3.5) * 1.1:
+        if (blob.h() / blob.w()) > (7/3.5) * 0.85 and (blob.h() / blob.w()) < (7/3.5) * 1.15:
             targets.append(blob);
 
     length = 0
     area = 0
     area_len = 0
 
-    target = "ugh"
+    target = None
 
     for t in targets:
         if t.w() * t.h() > area:
             area = t.w() * t.h();
             target = t
 
-    if target != "ugh":
+    if target != None:
         if target.elongation() > 0.5:
             img.draw_edges(target.min_corners(), color=(255,0,0))
             img.draw_line(target.major_axis_line(), color=(0,255,0))

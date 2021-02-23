@@ -47,6 +47,12 @@ color[2] = 0x00
 if live == False:
     img_reader = image.ImageIO("/stream_jan30.bin", "r")
 
+roi = (16, 0, 254, 164)
+
+thresholdsG = [(46, 100, -52, -20, -19, 26)]
+thresholdsW = [(31, 61, -8, 11, 0, 28)]
+
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     clock.tick()
@@ -61,27 +67,25 @@ while(True):
     else:
         img = sensor.snapshot()
 
-    thresholds = [(76, 100, -65, -8, -24, 22)]
 
-    for blob in img.find_blobs(thresholds, pixels_threshold=200, area_threshold=200):
+    for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
         # These values depend on the blob not being circular - otherwise they will be shaky.
         # These values are stable all the time.
         greenBlobs.append(blob)
 
-    #for c in greenBlobs:
-        #if blob.elongation() > 0.5:
-            #img.draw_edges(blob.min_corners(), color=(255,0,0))
-            #img.draw_line(blob.major_axis_line(), color=(0,255,0))
-            #img.draw_line(blob.minor_axis_line(), color=(0,0,255))
-        #img.draw_rectangle(blob.rect())
-        #img.draw_cross(blob.cx(), blob.cy())
-        ## Note - the blob rotation is unique to 0-180 only.
-        #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
+    for c in greenBlobs:
+        if blob.elongation() > 0.5:
+            img.draw_edges(blob.min_corners(), color=(255,0,0))
+            img.draw_line(blob.major_axis_line(), color=(0,255,0))
+            img.draw_line(blob.minor_axis_line(), color=(0,0,255))
+        img.draw_rectangle(blob.rect())
+        img.draw_cross(blob.cx(), blob.cy())
+        # Note - the blob rotation is unique to 0-180 only.
+        img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
-    thresholds = [(31, 61, -8, 11, 0, 28)]
     blobs = []
 
-    for blob in img.find_blobs(thresholds, pixels_threshold=150, area_threshold=150):
+    for blob in img.find_blobs(thresholdsW, pixels_threshold=150, area_threshold=150, roi=roi):
         # These values depend on the blob not being circular - otherwise they will be shaky.
         # These values are stable all the time.
         whiteBlobs.append(blob)
@@ -140,7 +144,15 @@ while(True):
         can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
         pyb.LED(1).on()
         pyb.LED(3).off()
-            #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
+
+        img.draw_edges(targetBlob.min_corners(), color=(255,0,0))
+        img.draw_line(targetBlob.major_axis_line(), color=(0,255,0))
+        img.draw_line(targetBlob.minor_axis_line(), color=(0,0,255))
+        img.draw_rectangle(targetBlob.rect(), color=(255, 0, 0))
+        img.draw_cross(targetBlob.cx(), targetBlob.cy())
+        # Note - the blob rotation is unique to 0-180 only.
+        img.draw_keypoints([(targetBlob.cx(), targetBlob.cy(), int(math.degrees(targetBlob.rotation())))], size=20)
+        #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
