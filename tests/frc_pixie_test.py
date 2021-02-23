@@ -6,10 +6,10 @@ import frc_pixie
 
 pixie = frc_pixie.frc_pixie()
 
-#sensor.reset()
-#sensor.set_pixformat(sensor.RGB565)
-#sensor.set_framesize(sensor.QVGA)
-#sensor.skip_frames(time = 2000)
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.skip_frames(time = 2000)
 
 clock = time.clock()
 
@@ -19,6 +19,7 @@ color[1] = 0x80
 color[2] = 0x00
 
 while(True):
+    img = sensor.snapshot()        # Take a picture and return the image.
     pixie.setColor(color)
 
     pyb.delay(100)

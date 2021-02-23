@@ -20,12 +20,15 @@ can.set_config(1, 0, 0, 0)
 # Set the mode for our OpenMV frcCAN device.
 can.set_mode(1)
 
+cx = 1
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     img = sensor.snapshot()
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
-    can.send_advanced_track_data(310, 100, 1099, 5, 77, 0)
+    can.send_advanced_track_data(cx, 100, 1099, 5, 77, 0)
+    cx = cx + 1
 
     # Occasionally send config data and camera status:
     if can.get_frame_counter() % 50 == 0:

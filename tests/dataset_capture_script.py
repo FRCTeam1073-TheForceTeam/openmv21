@@ -12,6 +12,8 @@ import frc_lidar
 
 lidar = frc_lidar.frc_lidar()
 
+record_time = 10000 # 10 seconds in milliseconds
+
 pixie = frc_pixie.frc_pixie()
 
 sensor.reset()
@@ -38,7 +40,10 @@ color[0] = 0x15
 color[1] = 0xFF
 color[2] = 0x00
 
-while(True):
+img_writer = image.ImageIO("/test_stream.bin", "w")
+
+start = pyb.millis()
+while pyb.elapsed_millis(start) < record_time:
     clock.tick()
 
     img = sensor.snapshot().gamma_corr(gamma = 1.4, contrast = 1.2, brightness = -0.2)
