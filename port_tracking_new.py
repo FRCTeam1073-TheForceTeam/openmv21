@@ -16,7 +16,7 @@ from pyb import UART
 live = True
 
 pixie = frc_pixie.frc_pixie()
-can = frc_can.frc_can(2)
+can = frc_can.frc_can(1)
 
 # Set the configuration for our OpenMV frcCAN device.
 can.set_config(2, 0, 0, 0)
@@ -91,7 +91,7 @@ while(True):
         index = index + 1
 
         targetX.append(t.cx())
-        targetY.append(t.cy())
+        targetY.append(t.y())
 
     for x in targetX:
         img.draw_line(x, 0, x, img.height())
@@ -123,7 +123,6 @@ while(True):
         img.draw_rectangle(targetBlob.rect(), color=(255, 0, 0))
         img.draw_cross(targetBlob.cx(), targetBlob.cy())
         # Note - the blob rotation is unique to 0-180 only.
-        img.draw_keypoints([(targetBlob.cx(), targetBlob.cy(), int(math.degrees(targetBlob.rotation())))], size=20)
         #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
 
     if can.get_frame_counter() % 50 == 0:
