@@ -44,29 +44,22 @@ color[0] = 0x00
 color[1] = 0xFF
 color[2] = 0x00
 
-if live == False:
-    img_reader = image.ImageIO("/stream_jan30.bin", "r")
+roi = (0, 0, 332, 190)
 
-roi = (16, 0, 254, 164)
-
-thresholdsG = [(46, 100, -52, -20, -19, 26)]
+thresholdsG = [(70, 100, -48, -9, -11, 24)]
 
 while(True):
     can.update_frame_counter() # Update the frame counter.
     clock.tick()
 
-    greenBlobs = []
+    img = sensor.snapshot()
 
-    if live == False:
-        img = img_reader.read(copy_to_fb=True, loop=True, pause=True)
-    else:
-        img = sensor.snapshot()
+    greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi)
 
-
-    for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
-        # These values depend on the blob not being circular - otherwise they will be shaky.
-        # These values are stable all the time.
-        greenBlobs.append(blob)
+    #for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
+        ## These values depend on the blob not being circular - otherwise they will be shaky.
+        ## These values are stable all the time.
+        #greenBlobs.append(blob)
 
         #if blob.elongation() > 0.5:
             #img.draw_edges(blob.min_corners(), color=(255,0,0))
@@ -78,36 +71,29 @@ while(True):
         #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
     targetBlob = None
-    targetX = []
-    targetY = []
+    #targetX = []
+    #targetY = []
 
     targetArea = 0
-    index = 0
 
     for t in greenBlobs:
         if t.w() * t.h() > targetArea:
             targetArea = t.w() * t.h()
             targetBlob = t
-        index = index + 1
 
-        targetX.append(t.cx())
-        targetY.append(t.y())
+        #targetX.append(t.cx())
+        #targetY.append(t.y())
 
-    for x in targetX:
-        img.draw_line(x, 0, x, img.height())
+    #for x in targetX:
+        #img.draw_line(x, 0, x, img.height())
 
-    for y in targetY:
-        img.draw_line(0, y, img.width(), y)
-
-    pixie.setColor(color)
-
-    if live == False:
-        time.sleep(1.5)
+    #for y in targetY:
+        #img.draw_line(0, y, img.width(), y)
 
     can.send_heartbeat()
 
 
-    if len(targetX) == 0 or len(targetY) == 0:
+    if targetBlob == None:
         can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
         pyb.LED(1).off()
         pyb.LED(3).on()
@@ -129,6 +115,9 @@ while(True):
         can.send_config_data()
         can.send_camera_status(sensor.width(), sensor.height())
 
-    pyb.delay(70)
-    print("HB %d" % can.get_frame_counter())
-    can.check_mode();
+    pyb.delay(30)
+
+    pixie.setColor(color)
+
+    #print("HB %d" % can.get_frame_counter())
+    #can.check_mode();
