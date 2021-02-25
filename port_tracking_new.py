@@ -13,8 +13,6 @@ import frc_pixie
 import frc_can
 from pyb import UART
 
-live = True
-
 pixie = frc_pixie.frc_pixie()
 can = frc_can.frc_can(1)
 
@@ -33,7 +31,7 @@ sensor.set_auto_whitebal(False)
 sensor.set_auto_exposure(True)
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.20 * original_exposure))
+sensor.set_auto_exposure(False, int(.10 * original_exposure))
 
 clock = time.clock()
 
@@ -147,7 +145,7 @@ while(True):
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
         can.send_camera_status(sensor.width(), sensor.height())
-    
+
     #PARSE THE RANGE DATA AND THEN SEE IT
     lidar_frame = uart.readline();
     print("Frame: %s"%lidar_frame);
