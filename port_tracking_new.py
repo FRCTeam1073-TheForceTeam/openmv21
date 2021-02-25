@@ -51,6 +51,35 @@ roi = (16, 0, 254, 164)
 
 thresholdsG = [(46, 100, -52, -20, -19, 26)]
 
+#lidar initialization
+uart = UART(3)
+uart.init(115200, bits=8, parity=None, stop=1, timeout_char=20, timeout=80);
+
+#lidar setup
+def lidar_command(command, purpose):
+    if purpose:
+        print("%s Command : %s"%(purpose, command))
+    uart.write(command);
+    response = uart.read();
+    if purpose:
+        print("%s Response : %s"%(purpose, response))
+    return purpose
+
+command = bytes(b'\x5A\x05\x07\x00\x66');
+lidar_command(command, "Disable");
+
+#read lidar
+response = uart.read();
+
+command = bytes(b'\x5A\x04\x01\x5F');
+lidar_command(command, "Version");
+command = bytes(b'\x5A\x05\x05\x02\x66');
+lidar_command(command, "Format");
+command = bytes(b'\x5A\x06\x03\x00\x00\x63');
+lidar_command(command, "Rate");
+command = bytes(b'\x5A\x05\x07\x01\x67');
+lidar_command(command, "Enable");
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     clock.tick()
@@ -62,6 +91,14 @@ while(True):
     else:
         img = sensor.snapshot()
 
+<<<<<<< Updated upstream
+=======
+    #lidar
+    command = bytes(b'\x5A\x04\x04\x62');
+    uart.write(command);
+
+    greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi)
+>>>>>>> Stashed changes
 
     for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
         # These values depend on the blob not being circular - otherwise they will be shaky.
@@ -129,6 +166,20 @@ while(True):
         can.send_config_data()
         can.send_camera_status(sensor.width(), sensor.height())
 
+<<<<<<< Updated upstream
     pyb.delay(70)
     print("HB %d" % can.get_frame_counter())
     can.check_mode();
+=======
+    #PARSE THE RANGE DATA AND THEN SEE IT
+    lidar_frame = uart.readline();
+    print("Frame: %s"%lidar_frame);
+    can.send_range_data(2, 3)
+
+    pyb.delay(30)
+
+    pixie.setColor(color)
+
+    #print("HB %d" % can.get_frame_counter())
+    #can.check_mode();
+>>>>>>> Stashed changes
