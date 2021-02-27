@@ -142,8 +142,10 @@ while(True):
 
     #PARSE THE RANGE DATA AND THEN SEE IT
     lidar_frame = uart.readline();
-    print("Frame: %s"%lidar_frame);
-    can.send_range_data(2, 3)
+    #print("Frame: %s"%lidar_frame);
+    lidar_range = float(lidar_frame)
+    #print("Range: %f"%lidar_range)
+    can.send_range_data(int(lidar_range * 1000), 11)
 
     pyb.delay(30)
 
