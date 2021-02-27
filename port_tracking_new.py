@@ -13,8 +13,6 @@ import frc_pixie
 import frc_can
 from pyb import UART
 
-live = True
-
 pixie = frc_pixie.frc_pixie()
 can = frc_can.frc_can(1)
 
@@ -33,7 +31,7 @@ sensor.set_auto_whitebal(False)
 sensor.set_auto_exposure(True)
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.20 * original_exposure))
+sensor.set_auto_exposure(False, int(.10 * original_exposure))
 
 clock = time.clock()
 
@@ -48,11 +46,44 @@ roi = (0, 0, 332, 190)
 
 thresholdsG = [(70, 100, -48, -9, -11, 24)]
 
+#lidar initialization
+uart = UART(3)
+uart.init(115200, bits=8, parity=None, stop=1, timeout_char=20, timeout=80);
+
+#lidar setup
+def lidar_command(command, purpose):
+    if purpose:
+        print("%s Command : %s"%(purpose, command))
+    uart.write(command);
+    response = uart.read();
+    if purpose:
+        print("%s Response : %s"%(purpose, response))
+    return purpose
+
+command = bytes(b'\x5A\x05\x07\x00\x66');
+lidar_command(command, "Disable");
+
+#read lidar
+response = uart.read();
+
+command = bytes(b'\x5A\x04\x01\x5F');
+lidar_command(command, "Version");
+command = bytes(b'\x5A\x05\x05\x02\x66');
+lidar_command(command, "Format");
+command = bytes(b'\x5A\x06\x03\x00\x00\x63');
+lidar_command(command, "Rate");
+command = bytes(b'\x5A\x05\x07\x01\x67');
+lidar_command(command, "Enable");
+
 while(True):
     can.update_frame_counter() # Update the frame counter.
     clock.tick()
 
     img = sensor.snapshot()
+
+    #lidar
+    command = bytes(b'\x5A\x04\x04\x62');
+    uart.write(command);
 
     greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi)
 
@@ -81,14 +112,8 @@ while(True):
             targetArea = t.w() * t.h()
             targetBlob = t
 
-        #targetX.append(t.cx())
-        #targetY.append(t.y())
-
-    #for x in targetX:
-        #img.draw_line(x, 0, x, img.height())
-
-    #for y in targetY:
-        #img.draw_line(0, y, img.width(), y)
+        #img.draw_line(t.cx(), 0, t.cx(), img.height())
+        #img.draw_line(0, t.y(), img.width(), t.y())
 
     can.send_heartbeat()
 
@@ -114,6 +139,14 @@ while(True):
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
         can.send_camera_status(sensor.width(), sensor.height())
+
+    #PARSE THE RANGE DATA AND THEN SEE IT
+    lidar_frame = uart.readline()
+    if lidar_frame != None:
+        #print("Frame: %s"%lidar_frame);
+        lidar_range = float(lidar_frame)
+        #print("Range: %f"%lidar_range)
+        can.send_range_data(int(lidar_range * 1000), 11)
 
     pyb.delay(30)
 
