@@ -112,14 +112,8 @@ while(True):
             targetArea = t.w() * t.h()
             targetBlob = t
 
-        #targetX.append(t.cx())
-        #targetY.append(t.y())
-
-    #for x in targetX:
-        #img.draw_line(x, 0, x, img.height())
-
-    #for y in targetY:
-        #img.draw_line(0, y, img.width(), y)
+        #img.draw_line(t.cx(), 0, t.cx(), img.height())
+        #img.draw_line(0, t.y(), img.width(), t.y())
 
     can.send_heartbeat()
 
