@@ -167,6 +167,8 @@ while(True):
         lidar_range = float(lidar_frame)
         #print("Range: %f"%lidar_range)
         can.send_range_data(int(lidar_range * 1000), 11)
+    else:
+        can.send_range_data(0, 0)
 
     pyb.delay(30)
 
