@@ -26,7 +26,7 @@ original_exposure = sensor.get_exposure_us()
 sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
-hist = [15, 95, -15, 20, 25, 80]
+hist = [30, 100, -38, 30, 51, 84]
 testHist = [15, 99, -25, 20, 15, 65]
 
 can = frc_can.frc_can(2)
@@ -72,8 +72,8 @@ lidar_command(command, "Enable");
 
 def distToCell(circle):
     dist = sqrt(
-        ((circle.cx() - sensor.width()/2)*(circle.cx() - sensor.width()/2)) +
-        ((circle.cy() - sensor.height())*(circle.cy() - sensor.height())))
+        ((circle.x() - sensor.width()/2)*(circle.x() - sensor.width()/2)) +
+        ((circle.y() - sensor.height())*(circle.y() - sensor.height())))
     return dist
 
 
@@ -88,22 +88,28 @@ while(True):
     uart.write(command);
 
     #pc tracking
+
+    allCircles = []
+
     for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=75, area_threshold=75, merge=True, ):
-        print (blob)
+        # print (blob)
         #img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h())
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
         minr = int((blob.w()-5)/2)
         maxr = int((blob.w()+5)/2)
 
-        circles = img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True)
+        #accumulating all circles
+        allCircles.extend(img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True))
 
-        sortedCircles = sorted(circles, key=distToCell, reverse=False)
+    #sorting all circles
+    sortedCircles = sorted(allCircles, key=distToCell, reverse=False)
 
-        #Loop is only for showing the circles, no processing
-        for circle in circles:
-            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
-            print(circle)
+    print(len(sortedCircles))
+    #Loop is only for showing the circles, no processing
+    for circle in sortedCircles:
+        img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
+        print(circle)
 
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
@@ -122,11 +128,11 @@ while(True):
     if len(sortedCircles) != 0:
         img.draw_circle(sortedCircles[0].x(), sortedCircles[0].y(), sortedCircles[0].r(),
             color = (255, 0, 0))
-        LED(1).off()
-        LED(3).on()
+        pyb.LED(1).on()
+        pyb.LED(3).off()
     else:
-        LED(1).on()
-        LED(3).off()
+        pyb.LED(1).off()
+        pyb.LED(3).on()
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
