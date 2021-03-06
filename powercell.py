@@ -84,8 +84,8 @@ while(True):
 
 
     #lidar
-    command = bytes(b'\x5A\x04\x04\x62');
-    uart.write(command);
+    #command = bytes(b'\x5A\x04\x04\x62');
+    #uart.write(command);
 
     #pc tracking
 
@@ -109,14 +109,14 @@ while(True):
     #Loop is only for showing the circles, no processing
     for circle in sortedCircles:
         img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
-        print(circle)
+        #print(circle)
 
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
 
     # the CAN side always uses "index" because it starts at 1, whereas the camera side uses "index-1"
     # because it starts at 0, like a normal list
-    for index in range(1, 3):
+    for index in range(1, 4):
         if len(sortedCircles) <= index-1:
             can.clear_advanced_track_data(index)
         else:
@@ -139,10 +139,10 @@ while(True):
         can.send_camera_status(sensor.width(), sensor.height())
 
     #PARSE THE RANGE DATA AND THEN SEE IT
-    lidar_frame = uart.readline();
-    can.send_range_data(2, 3)
+    #lidar_frame = uart.readline();
+    #can.send_range_data(2, 3)
 
-    pyb.delay(10)
+    pyb.delay(5)
     print("HB %d" % can.get_frame_counter())
     can.check_mode();
 
