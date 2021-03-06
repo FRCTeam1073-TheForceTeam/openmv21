@@ -9,6 +9,7 @@
 import sensor, image, time, pyb
 import frc_can
 from pyb import UART
+from math import sqrt
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # grayscale is faster
@@ -22,7 +23,7 @@ pyb.LED(1).off()
 pyb.LED(3).off()
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.40 * original_exposure))
+sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
 hist = [15, 95, -15, 20, 25, 80]
@@ -69,13 +70,18 @@ command = bytes(b'\x5A\x05\x07\x01\x67');
 lidar_command(command, "Enable");
 
 
+def distToCell(circle):
+    dist = sqrt(
+        ((circle.cx() - sensor.width()/2)*(circle.cx() - sensor.width()/2)) +
+        ((circle.cy() - sensor.height())*(circle.cy() - sensor.height())))
+    return dist
+
 
 while(True):
     can.update_frame_counter() # Update the frame counter.
     #img = sensor.snapshot()
     img = sensor.snapshot().lens_corr(strength=1.8)
 
-    bestCircle = None
 
     #lidar
     command = bytes(b'\x5A\x04\x04\x62');
@@ -89,39 +95,45 @@ while(True):
         minr = int((blob.w()-5)/2)
         maxr = int((blob.w()+5)/2)
 
-        for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-                                    r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
-            #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
+        circles = img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True)
+
+        sortedCircles = sorted(circles, key=distToCell, reverse=False)
+
+        #Loop is only for showing the circles, no processing
+        for circle in circles:
             img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
             print(circle)
 
-            #filtering for the closest powercell to the collector, compares and keeps closest PC
-            if bestCircle == None:
-                bestCircle = circle
-            elif bestCircle.y() < circle.y():
-                bestCircle = circle
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
 
-    if bestCircle == None:
-        can.send_advanced_track_data(0, 0, 0, 0, 0, 0)
-        pyb.LED(1).off()
-        pyb.LED(3).on()
+    # the CAN side always uses "index" because it starts at 1, whereas the camera side uses "index-1"
+    # because it starts at 0, like a normal list
+    for index in range(1, 3):
+        if len(sortedCircles) <= index-1:
+            can.clear_advanced_track_data(index)
+        else:
+            cidx = index - 1
+            area = int(3.14159 * (sortedCircles[cidx].r() * sortedCircles[cidx].r()))
+            can.send_advanced_track_data(sortedCircles[cidx].x(), sortedCircles[cidx].y(),
+                    area, 0, 11, 0, index)
+
+    if len(sortedCircles) != 0:
+        img.draw_circle(sortedCircles[0].x(), sortedCircles[0].y(), sortedCircles[0].r(),
+            color = (255, 0, 0))
+        LED(1).off()
+        LED(3).on()
     else:
-        area = int(3.14159 * (bestCircle.r() * bestCircle.r()))
-        can.send_advanced_track_data(bestCircle.x(), bestCircle.y(), area, 0, 11, 0)
-        img.draw_circle(bestCircle.x(), bestCircle.y(), bestCircle.r(), color = (255, 0, 0))
-        pyb.LED(1).on()
-        pyb.LED(3).off()
-                #TODO: the qual = 11 needs to be chaged with an actual quality filter eventually
+        LED(1).on()
+        LED(3).off()
 
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
-        can.send_camera_status(320, 240)
+        can.send_camera_status(sensor.width(), sensor.height())
 
     #PARSE THE RANGE DATA AND THEN SEE IT
     lidar_frame = uart.readline();
-    print("Frame: %s"%lidar_frame);
     can.send_range_data(2, 3)
 
     pyb.delay(10)

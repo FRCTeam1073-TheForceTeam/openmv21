@@ -218,7 +218,7 @@ class frc_can:
     # Advanced Target Tracking API Class: 5
 
     # Send advanced target tracking data to RoboRio
-    def send_advanced_track_data(self, cx, cy, area, ttype, qual, skew):
+    def send_advanced_track_data(self, cx, cy, area, ttype, qual, skew, slot=1):
         atb = bytearray(8)
         atb[0] = (cx & 0xff0) >> 4
         atb[1] = ((cx & 0x00f) << 4) | ((cy & 0xf00) >> 8)
@@ -228,12 +228,12 @@ class frc_can:
         atb[5] = (ttype & 0xff)
         atb[6] = (qual & 0xff)
         atb[7] = (skew & 0xff)
-        self.send(self.api_id(5, 1), atb)
+        self.send(self.api_id(5, slot), atb)
 
     # Send a null / 0 quality update to clear track data to RoboRio
-    def clear_advanced_track_data(self):
+    def clear_advanced_track_data(self, slot=1):
         atb = bytearray(8)
-        self.send(self.api_id(5, 1), atb)
+        self.send(self.api_id(5, slot), atb)
 
     #send LiDar range sensing data to the RIO using API class 6
     #r stands for range
