@@ -31,7 +31,7 @@ sensor.set_auto_whitebal(False)
 sensor.set_auto_exposure(True)
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.10 * original_exposure))
+sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
 
