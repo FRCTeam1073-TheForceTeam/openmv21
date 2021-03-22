@@ -44,9 +44,13 @@ color[2] = 0x00
 
 roi = (0, 0, 332, 190)
 
+<<<<<<< Updated upstream
 #thresholdsG = [(70, 100, -48, -9, -11, 24)]
 thresholdsG = [(64, 100, -75, -10, -23, 32)]
 thresholdsW = [(31, 61, -8, 11, 0, 28)]
+=======
+thresholdsG = [(61, 100, -76, -9, -24, 46)]
+>>>>>>> Stashed changes
 
 #lidar initialization
 uart = UART(3)
@@ -87,7 +91,11 @@ while(True):
     command = bytes(b'\x5A\x04\x04\x62');
     uart.write(command);
 
+<<<<<<< Updated upstream
     greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=100, area_threshold=200, roi=roi)
+=======
+    greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=50, area_threshold=200, roi=roi)
+>>>>>>> Stashed changes
 
     #for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
         ## These values depend on the blob not being circular - otherwise they will be shaky.
