@@ -44,7 +44,7 @@ color[2] = 0x00
 
 roi = (0, 0, 332, 190)
 
-thresholdsG = [(61, 100, -76, -9, -24, 46)]
+thresholdsG = [(14, 90, -101, -26, 10, 79)]
 
 #lidar initialization
 uart = UART(3)
@@ -163,7 +163,7 @@ while(True):
     if lidar_frame != None:
         #print("Frame: %s"%lidar_frame);
         lidar_range = float(lidar_frame)
-        #print("Range: %f"%lidar_range)
+        print("Range: %f"%lidar_range)
         can.send_range_data(int(lidar_range * 1000), 11)
     else:
         can.send_range_data(0, 0)
