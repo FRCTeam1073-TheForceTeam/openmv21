@@ -23,12 +23,12 @@ pyb.LED(1).off()
 pyb.LED(3).off()
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.30 * original_exposure))
+sensor.set_auto_exposure(False, int(.50 * original_exposure))
 
 clock = time.clock()
 
 # Histogram baseline for yellow power-cell
-hist = [45, 99, -30, 10, 35, 70]
+hist = [39, 90, -40, 29, 44, 95]
 
 # Power-Cell tracker is device #2
 can = frc_can.frc_can(2)
@@ -99,6 +99,19 @@ while(True):
         blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
         minr = int((blob.w()-5)/2)
         maxr = int((blob.w()+5)/2)
+
+        #accumulating all circles
+        allCircles.extend(img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True))
+
+    #sorting all circles
+    sortedCircles = sorted(allCircles, key=distToCell, reverse=False)
+
+    print(len(sortedCircles))
+    #Loop is only for showing the circles, no processing
+    for circle in sortedCircles:
+        img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
+        #print(circle)
 
         for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
                                     r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):

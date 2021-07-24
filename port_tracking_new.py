@@ -24,14 +24,13 @@ can.set_mode(1)
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # Modify as you like.
 sensor.set_framesize(sensor.QVGA) # Modify as you like.
-sensor.skip_frames(time = 2500)
+sensor.skip_frames(time = 3000)
 
-sensor.set_auto_gain(False)
+sensor.set_auto_gain(False, gain_db=int(sensor.get_gain_db() - 50))
 sensor.set_auto_whitebal(False)
-sensor.set_auto_exposure(True)
 
 original_exposure = sensor.get_exposure_us()
-sensor.set_auto_exposure(False, int(.30 * original_exposure))
+sensor.set_auto_exposure(False, int(0.5 * original_exposure))
 
 clock = time.clock()
 
@@ -40,11 +39,11 @@ uart = UART(1, 115200)
 color = bytearray(3)
 color[0] = 0x00
 color[1] = 0xFF
-color[2] = 0x00
+color[2] = 0x80
 
 roi = (0, 0, 332, 190)
 
-thresholdsG = [(14, 90, -101, -26, 10, 79)]
+thresholdsG = [(55, 93, -58, -26, -26, 24)]
 
 #lidar initialization
 uart = UART(3)
