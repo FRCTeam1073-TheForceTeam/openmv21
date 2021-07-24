@@ -16,4 +16,3 @@ class frc_pixie:
 
     def setColor(self, color2set):
         self.uart.write(color2set);
-        print("color...")
