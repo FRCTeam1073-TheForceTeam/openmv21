@@ -26,9 +26,11 @@ original_exposure = sensor.get_exposure_us()
 sensor.set_auto_exposure(False, int(.30 * original_exposure))
 
 clock = time.clock()
-hist = [30, 100, -38, 30, 51, 84]
-testHist = [15, 99, -25, 20, 15, 65]
 
+# Histogram baseline for yellow power-cell
+hist = [45, 99, -30, 10, 35, 70]
+
+# Power-Cell tracker is device #2
 can = frc_can.frc_can(2)
 
 # Set the configuration for our OpenMV frcCAN device.
@@ -98,18 +100,11 @@ while(True):
         minr = int((blob.w()-5)/2)
         maxr = int((blob.w()+5)/2)
 
-        #accumulating all circles
-        allCircles.extend(img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True))
-
-    #sorting all circles
-    sortedCircles = sorted(allCircles, key=distToCell, reverse=False)
-
-    print(len(sortedCircles))
-    #Loop is only for showing the circles, no processing
-    for circle in sortedCircles:
-        img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
-        #print(circle)
+        for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+                                    r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
+            #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
+            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
+            #print(circle)
 
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
@@ -137,10 +132,6 @@ while(True):
     if can.get_frame_counter() % 50 == 0:
         can.send_config_data()
         can.send_camera_status(sensor.width(), sensor.height())
-
-    #PARSE THE RANGE DATA AND THEN SEE IT
-    #lidar_frame = uart.readline();
-    #can.send_range_data(2, 3)
 
     pyb.delay(5)
     print("HB %d" % can.get_frame_counter())
