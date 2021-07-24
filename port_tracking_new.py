@@ -44,7 +44,7 @@ color[2] = 0x00
 
 roi = (0, 0, 332, 190)
 
-thresholdsG = [(70, 100, -48, -9, -11, 24)]
+thresholdsG = [(14, 90, -101, -26, 10, 79)]
 
 #lidar initialization
 uart = UART(3)
@@ -85,7 +85,7 @@ while(True):
     command = bytes(b'\x5A\x04\x04\x62');
     uart.write(command);
 
-    greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi)
+    greenBlobs = img.find_blobs(thresholdsG, pixels_threshold=50, area_threshold=200, roi=roi)
 
     #for blob in img.find_blobs(thresholdsG, pixels_threshold=200, area_threshold=200, roi=roi):
         ## These values depend on the blob not being circular - otherwise they will be shaky.
@@ -115,6 +115,17 @@ while(True):
         #img.draw_line(t.cx(), 0, t.cx(), img.height())
         #img.draw_line(0, t.y(), img.width(), t.y())
 
+    #whiteBlobs = img.find_blobs(thresholdsW, pixels_threshold=200, area_threshold=200, roi=(targetBlob.x(), targetBlob.y(), targetBlob.w(), targetBlob.h()))
+
+    innerTarget = None
+
+    #innerTargetArea = 0
+
+    #for t in whiteBlobs:
+        #if t.w() * t.h() > innerTargetArea:
+            #innerTargetArea = t.w() * t.h()
+            #innerTarget = t
+
     can.send_heartbeat()
 
 
@@ -124,7 +135,14 @@ while(True):
         pyb.LED(3).on()
     else:
         area = int(3.14159 * (targetBlob.w() / 2 * targetBlob.w() / 2))
-        can.send_advanced_track_data(targetBlob.cx(), targetBlob.cy(), area, 0, 11, 0)
+        if innerTarget != None:
+            x = (targetBlob.cx() + innerTarget.cx()) / 2
+            y = innerTarget.cy()
+        else:
+            x = targetBlob.cx()
+            y = targetBlob.y()
+
+        can.send_advanced_track_data(x, y, area, 0, 11, 0)
         pyb.LED(1).on()
         pyb.LED(3).off()
 
@@ -145,8 +163,10 @@ while(True):
     if lidar_frame != None:
         #print("Frame: %s"%lidar_frame);
         lidar_range = float(lidar_frame)
-        #print("Range: %f"%lidar_range)
+        print("Range: %f"%lidar_range)
         can.send_range_data(int(lidar_range * 1000), 11)
+    else:
+        can.send_range_data(0, 0)
 
     pyb.delay(30)
 
