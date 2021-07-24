@@ -139,9 +139,12 @@ while(True):
         else:
             cidx = index - 1
             area = int(sortedCells[cidx].w() * sortedCells[cidx].h())
-            print (area)
-            #can.send_advanced_track_data(sortedCells[cidx].x(), sortedCells[cidx].y(),
-                    #area, 0, 11, 0, index)
+            #print ()
+            #print ("y: " + )
+            #print ("area: " + area)
+            #print ("index: " + index)
+            can.send_advanced_track_data(sortedCells[cidx].x(), sortedCells[cidx].y(),
+                    area, 0, 11, 0, index)
 
     if len(sortedCells) != 0:
         img.draw_rectangle(sortedCells[0].x(), sortedCells[0].y(), sortedCells[0].w(), sortedCells[0].h(),
