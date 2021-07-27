@@ -28,7 +28,8 @@ sensor.set_auto_exposure(False, int(.50 * original_exposure))
 clock = time.clock()
 
 # Histogram baseline for yellow power-cell
-hist = [39, 90, -40, 29, 44, 95]
+#hist = [39, 90, -40, 29, 44, 95]
+hist = [37, 98, -68, 21, 34, 99]
 
 # Power-Cell tracker is device #2
 can = frc_can.frc_can(2)
@@ -72,10 +73,10 @@ command = bytes(b'\x5A\x05\x07\x01\x67');
 lidar_command(command, "Enable");
 
 
-def distToCell(circle):
+def distToCell(blob):
     dist = sqrt(
-        ((circle.x() - sensor.width()/2)*(circle.x() - sensor.width()/2)) +
-        ((circle.y() - sensor.height())*(circle.y() - sensor.height())))
+        ((blob.x() - sensor.width()/2)*(blob.x() - sensor.width()/2)) +
+        ((blob.y() - sensor.height())*(blob.y() - sensor.height())))
     return dist
 
 
@@ -91,50 +92,62 @@ while(True):
 
     #pc tracking
 
-    allCircles = []
+    #allCircles = []
+    cells = []
 
     for blob in img.find_blobs([hist], roi = pc_roi, pixels_threshold=75, area_threshold=75, merge=True, ):
+        aspectRatio = blob.w() / blob.h()
+        #print (aspectRatio)
+        if (0.5 < aspectRatio and aspectRatio < 2.1):
+            cells.append(blob)
+
         # print (blob)
         #img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h())
-        blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
-        minr = int((blob.w()-5)/2)
-        maxr = int((blob.w()+5)/2)
+        #blob_roi = (blob.x()-5, blob.y()-5, blob.w()+10, blob.h()+10)
+        #minr = int((blob.w()-5)/2)
+        #maxr = int((blob.w()+5)/2)
 
-        #accumulating all circles
-        allCircles.extend(img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-        r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True))
+        ##accumulating all circles
+        #allCircles.extend(img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+        #r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True))
 
     #sorting all circles
-    sortedCircles = sorted(allCircles, key=distToCell, reverse=False)
 
-    print(len(sortedCircles))
-    #Loop is only for showing the circles, no processing
-    for circle in sortedCircles:
-        img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
+    sortedCells = sorted(cells, key=distToCell, reverse=False)
+
+    #print(len(sortedCells))
+    ##Loop is only for showing the circles, no processing
+    for blob in sortedCells:
+        img.draw_rectangle(blob.x(), blob.y(), blob.w(), blob.h(), color = (0, 55, 200))
         #print(circle)
 
-        for circle in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
-                                    r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
-            #if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
-            img.draw_circle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
-            #print(circle)
+        #for blob in img.find_circles(roi = blob_roi, threshold = 2000, x_margin = 10, y_margin = 10,
+                                    #r_margin = 10, r_min = minr, r_max = maxr, r_step = 2, merge=True):
+            ##if ((circle.r()*2 - 10) < blob.w() < (circle.r()*2 + 10)):
+            #img.draw_rectangle(circle.x(), circle.y(), circle.r(), color = (0, 55, 200))
+            ##print(circle)
 
 
     can.send_heartbeat()       # Send the heartbeat message to the RoboRio
 
-    # the CAN side always uses "index" because it starts at 1, whereas the camera side uses "index-1"
-    # because it starts at 0, like a normal list
+    #the CAN side always uses "index" because it starts at 1, whereas the camera side uses "index-1"
+    #because it starts at 0, like a normal list
     for index in range(1, 4):
-        if len(sortedCircles) <= index-1:
+        if len(sortedCells) <= index-1:
+            #print ("hi")
             can.clear_advanced_track_data(index)
         else:
             cidx = index - 1
-            area = int(3.14159 * (sortedCircles[cidx].r() * sortedCircles[cidx].r()))
-            can.send_advanced_track_data(sortedCircles[cidx].x(), sortedCircles[cidx].y(),
+            area = int(sortedCells[cidx].w() * sortedCells[cidx].h())
+            #print ()
+            #print ("y: " + )
+            #print ("area: " + area)
+            #print ("index: " + index)
+            can.send_advanced_track_data(sortedCells[cidx].x(), sortedCells[cidx].y(),
                     area, 0, 11, 0, index)
 
-    if len(sortedCircles) != 0:
-        img.draw_circle(sortedCircles[0].x(), sortedCircles[0].y(), sortedCircles[0].r(),
+    if len(sortedCells) != 0:
+        img.draw_rectangle(sortedCells[0].x(), sortedCells[0].y(), sortedCells[0].w(), sortedCells[0].h(),
             color = (255, 0, 0))
         pyb.LED(1).on()
         pyb.LED(3).off()
@@ -147,7 +160,7 @@ while(True):
         can.send_camera_status(sensor.width(), sensor.height())
 
     pyb.delay(5)
-    print("HB %d" % can.get_frame_counter())
-    can.check_mode();
+    #print("HB %d" % can.get_frame_counter())
+    #can.check_mode();
 
 
