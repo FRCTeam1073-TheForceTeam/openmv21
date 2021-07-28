@@ -43,7 +43,7 @@ color[2] = 0x80
 
 roi = (0, 0, 332, 190)
 
-thresholdsG = [(30, 95, -85, -22, -4, 39)]
+thresholdsG = [(30, 95, -89, -19, -35, 39)]
 
 #lidar initialization
 uart = UART(3)
